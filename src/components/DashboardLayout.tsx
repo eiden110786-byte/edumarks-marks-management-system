@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
   GraduationCap, LayoutDashboard, Users, BookOpen, Layers, ClipboardList,
-  BarChart3, LogOut, Menu, X, UserCog, FileText
+  BarChart3, LogOut, Menu, X, UserCog, FileText, UsersRound
 } from 'lucide-react';
 
 interface NavItem { label: string; href: string; icon: ReactNode; }
@@ -16,6 +16,7 @@ const adminNav: NavItem[] = [
   { label: 'Batches', href: '/admin/batches', icon: <Layers className="w-5 h-5" /> },
   { label: 'Subjects', href: '/admin/subjects', icon: <BookOpen className="w-5 h-5" /> },
   { label: 'Assignments', href: '/admin/assignments', icon: <UserCog className="w-5 h-5" /> },
+  { label: 'Student Batches', href: '/admin/student-batches', icon: <UsersRound className="w-5 h-5" /> },
   { label: 'All Marks', href: '/admin/marks', icon: <ClipboardList className="w-5 h-5" /> },
   { label: 'Analytics', href: '/admin/analytics', icon: <BarChart3 className="w-5 h-5" /> },
 ];

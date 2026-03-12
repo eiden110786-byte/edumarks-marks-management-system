@@ -169,7 +169,7 @@ serve(async (req) => {
       summary: { students: studentIds.length, teachers: teacherIds.length, batches: batches?.length, subjects: subjects?.length, marks: studentIds.length * 6 }
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    return new Response(JSON.stringify({ error: (err as Error).message }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

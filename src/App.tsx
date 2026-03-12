@@ -13,6 +13,7 @@ import ManageUsers from "./pages/admin/ManageUsers";
 import ManageBatches from "./pages/admin/ManageBatches";
 import ManageSubjects from "./pages/admin/ManageSubjects";
 import ManageAssignments from "./pages/admin/ManageAssignments";
+import ManageStudentBatches from "./pages/admin/ManageStudentBatches";
 import AdminMarks from "./pages/admin/AdminMarks";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/admin/batches" element={<ProtectedRoute allowedRoles={['admin']}><ManageBatches /></ProtectedRoute>} />
             <Route path="/admin/subjects" element={<ProtectedRoute allowedRoles={['admin']}><ManageSubjects /></ProtectedRoute>} />
             <Route path="/admin/assignments" element={<ProtectedRoute allowedRoles={['admin']}><ManageAssignments /></ProtectedRoute>} />
+            <Route path="/admin/student-batches" element={<ProtectedRoute allowedRoles={['admin']}><ManageStudentBatches /></ProtectedRoute>} />
             <Route path="/admin/marks" element={<ProtectedRoute allowedRoles={['admin']}><AdminMarks /></ProtectedRoute>} />
             <Route path="/admin/analytics" element={<ProtectedRoute allowedRoles={['admin']}><AdminAnalytics /></ProtectedRoute>} />
             
