@@ -86,9 +86,16 @@ export default function ManageUsers() {
   };
 
   const handleDelete = async (userId: string) => {
-    await supabase.from('user_roles').delete().eq('user_id', userId);
-    await supabase.from('profiles').delete().eq('user_id', userId);
-    toast({ title: 'User removed' });
+    const { data: { session } } = await supabase.auth.getSession();
+    const { data, error } = await supabase.functions.invoke('delete-user', {
+      body: { user_id: userId },
+      headers: { Authorization: `Bearer ${session?.access_token}` },
+    });
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to delete user', variant: 'destructive' });
+    } else {
+      toast({ title: 'User removed' });
+    }
     fetchUsers();
   };
 
