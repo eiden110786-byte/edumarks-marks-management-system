@@ -4,9 +4,15 @@ import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
-  GraduationCap, LayoutDashboard, Users, BookOpen, Layers, ClipboardList,
-  BarChart3, LogOut, Menu, X, UserCog, FileText, UsersRound
+  LayoutDashboard, Users, BookOpen, Layers, ClipboardList,
+  BarChart3, LogOut, Menu, X, UserCog, FileText, UsersRound, KeyRound
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import logo from '@/assets/logo.png';
 
 interface NavItem { label: string; href: string; icon: ReactNode; }
 
@@ -37,26 +43,50 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const { role, signOut, user } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [changePwOpen, setChangePwOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [pwLoading, setPwLoading] = useState(false);
+  const { toast } = useToast();
 
   const navItems = role === 'admin' ? adminNav : role === 'teacher' ? teacherNav : studentNav;
   const roleLabel = role === 'admin' ? 'Administrator' : role === 'teacher' ? 'Teacher' : 'Student';
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPw) {
+      toast({ title: 'Error', description: 'Passwords do not match', variant: 'destructive' });
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast({ title: 'Error', description: 'Password must be at least 6 characters', variant: 'destructive' });
+      return;
+    }
+    setPwLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setPwLoading(false);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Password updated successfully' });
+      setChangePwOpen(false);
+      setNewPassword('');
+      setConfirmPw('');
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Mobile overlay */}
       {sidebarOpen && <div className="fixed inset-0 bg-foreground/20 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
-      {/* Sidebar */}
       <aside className={cn(
         "fixed lg:static inset-y-0 left-0 z-50 w-64 sidebar-gradient flex flex-col transition-transform duration-200 lg:translate-x-0",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex items-center gap-3 px-6 py-5 border-b border-sidebar-border">
-          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-sidebar-primary">
-            <GraduationCap className="w-5 h-5 text-sidebar-primary-foreground" />
-          </div>
+          <img src={logo} alt="Logo" className="w-9 h-9 rounded-lg object-contain" />
           <div>
-            <h2 className="text-sm font-bold text-sidebar-primary-foreground font-display">EduMarks</h2>
+            <h2 className="text-sm font-bold text-sidebar-primary-foreground font-display leading-tight">USMS</h2>
             <p className="text-xs text-sidebar-foreground/60">{roleLabel}</p>
           </div>
         </div>
@@ -87,6 +117,13 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
           <Button
             variant="ghost"
             className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+            onClick={() => setChangePwOpen(true)}
+          >
+            <KeyRound className="w-4 h-4 mr-2" /> Change Password
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
             onClick={signOut}
           >
             <LogOut className="w-4 h-4 mr-2" /> Sign Out
@@ -94,7 +131,24 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      {/* Main content */}
+      {/* Change Password Dialog */}
+      <Dialog open={changePwOpen} onOpenChange={setChangePwOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Change Password</DialogTitle></DialogHeader>
+          <form onSubmit={handleChangePassword} className="space-y-4">
+            <div className="space-y-2">
+              <Label>New Password</Label>
+              <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="••••••••" required minLength={6} />
+            </div>
+            <div className="space-y-2">
+              <Label>Confirm Password</Label>
+              <Input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)} placeholder="••••••••" required minLength={6} />
+            </div>
+            <Button type="submit" className="w-full" disabled={pwLoading}>Update Password</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <main className="flex-1 min-w-0">
         <header className="sticky top-0 z-30 flex items-center gap-4 px-6 py-4 bg-background/80 backdrop-blur-sm border-b">
           <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setSidebarOpen(true)}>

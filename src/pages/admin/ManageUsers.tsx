@@ -52,8 +52,16 @@ export default function ManageUsers() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, requested_role: role } } });
-    if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); setLoading(false); return; }
+    const { data: { session } } = await supabase.auth.getSession();
+    const { data, error } = await supabase.functions.invoke('create-user', {
+      body: { email, password, full_name: fullName, role },
+      headers: { Authorization: `Bearer ${session?.access_token}` },
+    });
+    if (error || data?.error) {
+      toast({ title: 'Error', description: data?.error || error?.message || 'Failed to create user', variant: 'destructive' });
+      setLoading(false);
+      return;
+    }
     toast({ title: 'User created', description: `${fullName} added as ${role}` });
     setOpen(false); setEmail(''); setPassword(''); setFullName('');
     setTimeout(() => fetchUsers(), 1000);
