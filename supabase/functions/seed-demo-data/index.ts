@@ -57,7 +57,11 @@ serve(async (req) => {
     }
     const existingByEmail = new Map(allPages.map(u => [u.email, u]));
 
-    // ---- Batches ----
+    // ---- Clean up ----
+    await supabaseAdmin.from("attendance").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    await supabaseAdmin.from("fee_payments").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    await supabaseAdmin.from("assignment_submissions").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    await supabaseAdmin.from("assignment_uploads").delete().neq("id", "00000000-0000-0000-0000-000000000000");
     await supabaseAdmin.from("student_batches").delete().neq("id", "00000000-0000-0000-0000-000000000000");
     await supabaseAdmin.from("marks").delete().neq("id", "00000000-0000-0000-0000-000000000000");
     await supabaseAdmin.from("teacher_subjects").delete().neq("id", "00000000-0000-0000-0000-000000000000");
@@ -93,6 +97,8 @@ serve(async (req) => {
       const existing = existingByEmail.get(email);
       if (existing) {
         await supabaseAdmin.from("profiles").update({ full_name: name }).eq("user_id", existing.id);
+        // Ensure role exists
+        await supabaseAdmin.from("user_roles").upsert({ user_id: existing.id, role }, { onConflict: "user_id" });
         return existing.id;
       }
       const { data: newUser } = await supabaseAdmin.auth.admin.createUser({
@@ -106,6 +112,9 @@ serve(async (req) => {
       }
       return null;
     };
+
+    // ---- Admin ----
+    const adminId = await getOrCreate("admin@edumarks.com", "admin123", "Administrator", "admin");
 
     // ---- Teachers ----
     const teacherIds: string[] = [];
@@ -122,7 +131,7 @@ serve(async (req) => {
       if (id) studentIds.push(id);
     }
 
-    // ---- Assignments ----
+    // ---- Student Batches ----
     if (batches && batches.length > 0) {
       const sbInserts = studentIds.map((sid, idx) => ({
         student_id: sid, batch_id: batches[idx % batches.length].id,
@@ -132,6 +141,7 @@ serve(async (req) => {
       }
     }
 
+    // ---- Teacher Subject Assignments ----
     if (subjects && batches && teacherIds.length > 0) {
       const tsInserts: any[] = [];
       for (let si = 0; si < subjects.length; si++) {
@@ -162,11 +172,75 @@ serve(async (req) => {
       for (let i = 0; i < marksInserts.length; i += 50) {
         await supabaseAdmin.from("marks").insert(marksInserts.slice(i, i + 50));
       }
+
+      // ---- Attendance (last 30 days) ----
+      const attendanceInserts: any[] = [];
+      const today = new Date();
+      for (let day = 0; day < 30; day++) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - day);
+        if (d.getDay() === 0 || d.getDay() === 6) continue; // skip weekends
+        const dateStr = d.toISOString().split("T")[0];
+        
+        // For each batch, pick 2 subjects and mark attendance
+        for (let bi = 0; bi < batches.length; bi++) {
+          const batchStudents = studentIds.filter((_, idx) => idx % batches.length === bi);
+          const subjectSlice = subjects.slice(bi % 3 * 2, bi % 3 * 2 + 2);
+          
+          for (const sub of subjectSlice) {
+            const teacherIdx = (subjects.indexOf(sub) + bi) % teacherIds.length;
+            for (const sid of batchStudents) {
+              attendanceInserts.push({
+                student_id: sid,
+                batch_id: batches[bi].id,
+                subject_id: sub.id,
+                date: dateStr,
+                status: Math.random() > 0.15 ? "Present" : "Absent",
+                marked_by: teacherIds[teacherIdx],
+              });
+            }
+          }
+        }
+      }
+      // Insert attendance in batches
+      for (let i = 0; i < attendanceInserts.length; i += 100) {
+        await supabaseAdmin.from("attendance").insert(attendanceInserts.slice(i, i + 100));
+      }
+
+      // ---- Fee Payments ----
+      const feeInserts: any[] = [];
+      const statuses = ["Pending", "Verified", "Verified", "Pending", "Verified"];
+      for (let i = 0; i < studentIds.length; i++) {
+        const batchIdx = i % batches.length;
+        const semester = batches[batchIdx].semester;
+        feeInserts.push({
+          student_id: studentIds[i],
+          amount: 25000 + Math.floor(Math.random() * 10000),
+          semester,
+          challan_id: `CH-2025-${String(i + 1).padStart(4, "0")}`,
+          status: statuses[i % statuses.length],
+          payment_date: new Date(2025, semester - 1, 10 + (i % 15)).toISOString().split("T")[0],
+          verified_by: statuses[i % statuses.length] === "Verified" ? adminId : null,
+          verified_at: statuses[i % statuses.length] === "Verified" ? new Date().toISOString() : null,
+        });
+      }
+      for (let i = 0; i < feeInserts.length; i += 50) {
+        await supabaseAdmin.from("fee_payments").insert(feeInserts.slice(i, i + 50));
+      }
     }
 
     return new Response(JSON.stringify({
       success: true,
-      summary: { students: studentIds.length, teachers: teacherIds.length, batches: batches?.length, subjects: subjects?.length, marks: studentIds.length * 6 }
+      summary: {
+        admin: adminId ? 1 : 0,
+        students: studentIds.length,
+        teachers: teacherIds.length,
+        batches: batches?.length,
+        subjects: subjects?.length,
+        marks: studentIds.length * 6,
+        attendance: "30 days seeded",
+        fees: studentIds.length,
+      }
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
     return new Response(JSON.stringify({ error: (err as Error).message }), {

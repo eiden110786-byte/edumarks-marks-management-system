@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, Users, BookOpen, Layers, ClipboardList,
-  BarChart3, LogOut, Menu, X, UserCog, FileText, UsersRound, KeyRound
+  BarChart3, LogOut, Menu, X, UserCog, FileText, UsersRound, KeyRound,
+  Upload, CalendarCheck, CreditCard, User
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -23,20 +24,31 @@ const adminNav: NavItem[] = [
   { label: 'Subjects', href: '/admin/subjects', icon: <BookOpen className="w-5 h-5" /> },
   { label: 'Assignments', href: '/admin/assignments', icon: <UserCog className="w-5 h-5" /> },
   { label: 'Student Batches', href: '/admin/student-batches', icon: <UsersRound className="w-5 h-5" /> },
-  { label: 'All Marks', href: '/admin/marks', icon: <ClipboardList className="w-5 h-5" /> },
+  { label: 'Marks', href: '/admin/marks', icon: <ClipboardList className="w-5 h-5" /> },
+  { label: 'Attendance', href: '/admin/attendance', icon: <CalendarCheck className="w-5 h-5" /> },
+  { label: 'Assignment Files', href: '/admin/assignment-uploads', icon: <Upload className="w-5 h-5" /> },
+  { label: 'Fee Payments', href: '/admin/fees', icon: <CreditCard className="w-5 h-5" /> },
   { label: 'Analytics', href: '/admin/analytics', icon: <BarChart3 className="w-5 h-5" /> },
+  { label: 'Profile', href: '/admin/profile', icon: <User className="w-5 h-5" /> },
 ];
 
 const teacherNav: NavItem[] = [
   { label: 'Dashboard', href: '/teacher', icon: <LayoutDashboard className="w-5 h-5" /> },
   { label: 'Enter Marks', href: '/teacher/marks', icon: <ClipboardList className="w-5 h-5" /> },
+  { label: 'Assignments', href: '/teacher/assignments', icon: <Upload className="w-5 h-5" /> },
+  { label: 'Attendance', href: '/teacher/attendance', icon: <CalendarCheck className="w-5 h-5" /> },
   { label: 'Performance', href: '/teacher/performance', icon: <BarChart3 className="w-5 h-5" /> },
+  { label: 'Profile', href: '/teacher/profile', icon: <User className="w-5 h-5" /> },
 ];
 
 const studentNav: NavItem[] = [
   { label: 'Dashboard', href: '/student', icon: <LayoutDashboard className="w-5 h-5" /> },
   { label: 'My Marks', href: '/student/marks', icon: <ClipboardList className="w-5 h-5" /> },
-  { label: 'Report Card', href: '/student/report', icon: <FileText className="w-5 h-5" /> },
+  { label: 'Marks Certificate', href: '/student/report', icon: <FileText className="w-5 h-5" /> },
+  { label: 'Assignments', href: '/student/assignments', icon: <Upload className="w-5 h-5" /> },
+  { label: 'Attendance', href: '/student/attendance', icon: <CalendarCheck className="w-5 h-5" /> },
+  { label: 'Fee Payments', href: '/student/fees', icon: <CreditCard className="w-5 h-5" /> },
+  { label: 'Profile', href: '/student/profile', icon: <User className="w-5 h-5" /> },
 ];
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
@@ -91,7 +103,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-1">
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {navItems.map(item => (
             <Link
               key={item.href}

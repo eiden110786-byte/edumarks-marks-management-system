@@ -3,8 +3,9 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 import { StatCard } from '@/components/StatCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
-import { BookOpen, Award, TrendingUp } from 'lucide-react';
+import { BookOpen, Award, TrendingUp, CalendarCheck, CreditCard } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 function getGrade(pct: number): string {
@@ -21,13 +22,17 @@ export default function StudentDashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState({ totalMarks: 0, totalMax: 0, percentage: 0, grade: 'N/A', subjects: 0 });
   const [chartData, setChartData] = useState<{ name: string; marks: number; max: number }[]>([]);
+  const [attendancePct, setAttendancePct] = useState(0);
+  const [pendingFees, setPendingFees] = useState(0);
 
   useEffect(() => {
     if (!user) return;
     const fetch = async () => {
-      const [marksRes, subjectsRes] = await Promise.all([
+      const [marksRes, subjectsRes, attRes, feeRes] = await Promise.all([
         supabase.from('marks').select('*').eq('student_id', user.id),
         supabase.from('subjects').select('*'),
+        supabase.from('attendance').select('status').eq('student_id', user.id),
+        supabase.from('fee_payments').select('status').eq('student_id', user.id),
       ]);
       const marks = marksRes.data ?? [];
       const subjects = subjectsRes.data ?? [];
@@ -43,6 +48,15 @@ export default function StudentDashboard() {
       const pct = totalMax > 0 ? Math.round((total / totalMax) * 100) : 0;
       setStats({ totalMarks: total, totalMax, percentage: pct, grade: getGrade(pct), subjects: marks.length });
       setChartData(data);
+
+      // Attendance
+      const att = attRes.data ?? [];
+      const present = att.filter(a => a.status === 'Present').length;
+      setAttendancePct(att.length > 0 ? Math.round((present / att.length) * 100) : 0);
+
+      // Fees
+      const fees = feeRes.data ?? [];
+      setPendingFees(fees.filter(f => f.status === 'Pending').length);
     };
     fetch();
   }, [user]);
@@ -54,10 +68,21 @@ export default function StudentDashboard() {
         <p className="page-description">Your academic overview</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <StatCard title="Subjects" value={stats.subjects} icon={<BookOpen className="w-5 h-5" />} />
         <StatCard title="Percentage" value={`${stats.percentage}%`} icon={<TrendingUp className="w-5 h-5" />} description={`${stats.totalMarks}/${stats.totalMax} total marks`} />
         <StatCard title="Grade" value={stats.grade} icon={<Award className="w-5 h-5" />} />
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2 mb-2">
+              <CalendarCheck className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Attendance</span>
+            </div>
+            <p className="text-2xl font-bold">{attendancePct}%</p>
+            <Progress value={attendancePct} className="mt-2 h-2" />
+          </CardContent>
+        </Card>
+        <StatCard title="Pending Fees" value={pendingFees} icon={<CreditCard className="w-5 h-5" />} />
       </div>
 
       {chartData.length > 0 && (

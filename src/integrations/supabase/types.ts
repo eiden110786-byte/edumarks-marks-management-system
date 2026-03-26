@@ -14,6 +14,155 @@ export type Database = {
   }
   public: {
     Tables: {
+      assignment_submissions: {
+        Row: {
+          assignment_id: string
+          feedback: string | null
+          file_name: string
+          file_url: string
+          id: string
+          marks: number | null
+          reviewed_at: string | null
+          status: string
+          student_id: string
+          submitted_at: string
+        }
+        Insert: {
+          assignment_id: string
+          feedback?: string | null
+          file_name: string
+          file_url: string
+          id?: string
+          marks?: number | null
+          reviewed_at?: string | null
+          status?: string
+          student_id: string
+          submitted_at?: string
+        }
+        Update: {
+          assignment_id?: string
+          feedback?: string | null
+          file_name?: string
+          file_url?: string
+          id?: string
+          marks?: number | null
+          reviewed_at?: string | null
+          status?: string
+          student_id?: string
+          submitted_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignment_submissions_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignment_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assignment_uploads: {
+        Row: {
+          batch_id: string
+          created_at: string
+          description: string | null
+          due_date: string | null
+          file_name: string
+          file_url: string
+          id: string
+          subject_id: string
+          teacher_id: string
+          title: string
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          file_name: string
+          file_url: string
+          id?: string
+          subject_id: string
+          teacher_id: string
+          title: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          file_name?: string
+          file_url?: string
+          id?: string
+          subject_id?: string
+          teacher_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignment_uploads_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignment_uploads_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance: {
+        Row: {
+          batch_id: string
+          created_at: string
+          date: string
+          id: string
+          marked_by: string
+          status: string
+          student_id: string
+          subject_id: string
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          date?: string
+          id?: string
+          marked_by: string
+          status?: string
+          student_id: string
+          subject_id: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          marked_by?: string
+          status?: string
+          student_id?: string
+          subject_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       batches: {
         Row: {
           created_at: string
@@ -35,6 +184,51 @@ export type Database = {
           name?: string
           semester?: number
           year?: number
+        }
+        Relationships: []
+      }
+      fee_payments: {
+        Row: {
+          amount: number
+          challan_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          payment_date: string
+          proof_url: string | null
+          semester: number
+          status: string
+          student_id: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          amount?: number
+          challan_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          proof_url?: string | null
+          semester?: number
+          status?: string
+          student_id: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          amount?: number
+          challan_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          proof_url?: string | null
+          semester?: number
+          status?: string
+          student_id?: string
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Relationships: []
       }
@@ -88,29 +282,35 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
           created_at: string
           email: string
           full_name: string
           id: string
           phone: string | null
+          roll_number: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string
           email?: string
           full_name?: string
           id?: string
           phone?: string | null
+          roll_number?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string
           email?: string
           full_name?: string
           id?: string
           phone?: string | null
+          roll_number?: string | null
           updated_at?: string
           user_id?: string
         }

@@ -1,0 +1,5 @@
+$ git add .
+$ git status
+$ git commit -m "second commit" .
+$ git push --set-upstream origin master
+$ git push
