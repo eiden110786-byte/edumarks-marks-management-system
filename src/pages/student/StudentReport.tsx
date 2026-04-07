@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import siteLogo from '@/assets/logo.png';
 
 function getGrade(pct: number): string {
   if (pct >= 90) return 'A+';
@@ -32,6 +33,23 @@ function getGradePoints(pct: number): number {
   return 0.0;
 }
 
+function loadImageAsBase64(url: string): Promise<string | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
+
 interface MarkRow {
   subject: string; code: string; obtained: number; max: number;
   percentage: number; grade: string; gradePoints: number; status: string;
@@ -51,6 +69,20 @@ export default function StudentReport() {
   });
   const [cgpa, setCgpa] = useState(0);
   const [selectedSemester, setSelectedSemester] = useState('');
+  const [logoBase64, setLogoBase64] = useState<string | null>(null);
+  const [avatarBase64, setAvatarBase64] = useState<string | null>(null);
+
+  // Preload site logo
+  useEffect(() => {
+    loadImageAsBase64(siteLogo).then(setLogoBase64);
+  }, []);
+
+  // Load avatar when profile changes
+  useEffect(() => {
+    if (profile.avatar_url) {
+      loadImageAsBase64(profile.avatar_url).then(setAvatarBase64);
+    }
+  }, [profile.avatar_url]);
 
   useEffect(() => {
     if (!user) return;
@@ -102,32 +134,48 @@ export default function StudentReport() {
     fetch();
   }, [user]);
 
-  const generatePDF = (type: 'semester' | 'final', sem?: SemesterSummary) => {
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text('UNIVERSITY OF SUFISM & MODERN SCIENCES, BHIT SHAH', 105, 15, { align: 'center' });
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Grade and Academic Record Management System', 105, 22, { align: 'center' });
-
-    doc.setLineWidth(0.5);
-    doc.line(20, 26, 190, 26);
+  const addPdfHeader = useCallback((doc: jsPDF) => {
+    // Logo on the left
+    if (logoBase64) {
+      doc.addImage(logoBase64, 'PNG', 15, 8, 18, 18);
+    }
+    // Avatar on the right
+    if (avatarBase64) {
+      doc.addImage(avatarBase64, 'PNG', 172, 8, 18, 18);
+    }
 
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text(type === 'semester' ? `SEMESTER ${sem?.semester} MARKS CERTIFICATE` : 'FINAL MARKS CERTIFICATE', 105, 34, { align: 'center' });
+    doc.text('UNIVERSITY OF SUFISM & MODERN SCIENCES', 105, 14, { align: 'center' });
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text('BHIT SHAH', 105, 19, { align: 'center' });
+    doc.setFontSize(10);
+    doc.text('Grade and Academic Record Management System', 105, 24, { align: 'center' });
+
+    doc.setLineWidth(0.5);
+    doc.line(15, 28, 195, 28);
+  }, [logoBase64, avatarBase64]);
+
+  const generatePDF = (type: 'semester' | 'final', sem?: SemesterSummary) => {
+    const doc = new jsPDF();
+
+    addPdfHeader(doc);
+
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text(type === 'semester' ? `SEMESTER ${sem?.semester} MARKS CERTIFICATE` : 'FINAL MARKS CERTIFICATE', 105, 36, { align: 'center' });
 
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Student: ${profile.full_name}`, 20, 44);
-    doc.text(`Roll No: ${profile.roll_number || 'N/A'}`, 20, 50);
-    doc.text(`Email: ${profile.email}`, 20, 56);
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, 150, 44);
+    doc.text(`Student: ${profile.full_name}`, 15, 46);
+    doc.text(`Roll No: ${profile.roll_number || 'N/A'}`, 15, 52);
+    doc.text(`Email: ${profile.email}`, 15, 58);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 155, 46);
 
     if (type === 'semester' && sem) {
-      doc.text(`Batch: ${sem.batch_name}`, 150, 50);
-      doc.text(`GPA: ${sem.gpa}`, 150, 56);
+      doc.text(`Batch: ${sem.batch_name}`, 155, 52);
+      doc.text(`GPA: ${sem.gpa}`, 155, 58);
 
       autoTable(doc, {
         startY: 64,
@@ -148,13 +196,13 @@ export default function StudentReport() {
       doc.text(`CGPA (up to Sem ${sem.semester}): ${cgpa}`, 105, finalY + 8, { align: 'center' });
       doc.save(`semester-${sem.semester}-certificate-${profile.full_name.replace(/\s+/g, '-')}.pdf`);
     } else {
-      doc.text(`CGPA: ${cgpa}`, 150, 50);
+      doc.text(`CGPA: ${cgpa}`, 155, 52);
       let startY = 64;
 
       semesters.forEach(s => {
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
-        doc.text(`Semester ${s.semester} — ${s.batch_name}`, 20, startY);
+        doc.text(`Semester ${s.semester} — ${s.batch_name}`, 15, startY);
         startY += 3;
 
         autoTable(doc, {

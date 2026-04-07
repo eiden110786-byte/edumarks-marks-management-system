@@ -52,8 +52,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error as Error | null };
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { error: error as Error };
+
+    // Check approval status for students
+    if (data.user) {
+      const { data: status } = await supabase.rpc('get_approval_status', { _user_id: data.user.id });
+      if (status === 'pending') {
+        await supabase.auth.signOut();
+        return { error: new Error('Your account is pending admin approval. You will be notified once approved.') };
+      }
+      if (status === 'rejected') {
+        await supabase.auth.signOut();
+        return { error: new Error('Your registration has been rejected. Please contact the administrator.') };
+      }
+    }
+
+    return { error: null };
   };
 
   const signUp = async (email: string, password: string, fullName: string, role: AppRole) => {

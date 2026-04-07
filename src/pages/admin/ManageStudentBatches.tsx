@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, Search } from 'lucide-react';
+import { Plus, Trash2, Search, Pencil } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface StudentBatchRow {
@@ -24,6 +24,8 @@ export default function ManageStudentBatches() {
   const [students, setStudents] = useState<{ user_id: string; full_name: string }[]>([]);
   const [batches, setBatches] = useState<{ id: string; name: string }[]>([]);
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editId, setEditId] = useState('');
   const [studentId, setStudentId] = useState('');
   const [batchId, setBatchId] = useState('');
   const { toast } = useToast();
@@ -56,12 +58,32 @@ export default function ManageStudentBatches() {
 
   useEffect(() => { fetchAll(); }, []);
 
+  const resetForm = () => { setStudentId(''); setBatchId(''); };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     const { error } = await supabase.from('student_batches').insert({ student_id: studentId, batch_id: batchId });
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return; }
     toast({ title: 'Student added to batch' });
     setOpen(false);
+    resetForm();
+    fetchAll();
+  };
+
+  const openEdit = (r: StudentBatchRow) => {
+    setEditId(r.id);
+    setStudentId(r.student_id);
+    setBatchId(r.batch_id);
+    setEditOpen(true);
+  };
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { error } = await supabase.from('student_batches').update({ student_id: studentId, batch_id: batchId }).eq('id', editId);
+    if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return; }
+    toast({ title: 'Student batch updated' });
+    setEditOpen(false);
+    resetForm();
     fetchAll();
   };
 
@@ -76,37 +98,49 @@ export default function ManageStudentBatches() {
     r.batch_name.toLowerCase().includes(search.toLowerCase())
   );
 
+  const renderForm = (onSubmit: (e: React.FormEvent) => void, submitLabel: string) => (
+    <form onSubmit={onSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label>Student</Label>
+        <Select value={studentId} onValueChange={setStudentId}>
+          <SelectTrigger><SelectValue placeholder="Select student" /></SelectTrigger>
+          <SelectContent>{students.map(s => <SelectItem key={s.user_id} value={s.user_id}>{s.full_name}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2">
+        <Label>Batch</Label>
+        <Select value={batchId} onValueChange={setBatchId}>
+          <SelectTrigger><SelectValue placeholder="Select batch" /></SelectTrigger>
+          <SelectContent>{batches.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+      <Button type="submit" className="w-full" disabled={!studentId || !batchId}>{submitLabel}</Button>
+    </form>
+  );
+
   return (
     <DashboardLayout>
       <div className="page-header flex items-start justify-between">
         <div>
-          <h1 className="page-title">Student Batches</h1>
+          <h1 className="page-title">Students Batches</h1>
           <p className="page-description">Assign students to batches</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
           <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" />Add to Batch</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Assign Student to Batch</DialogTitle></DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Student</Label>
-                <Select value={studentId} onValueChange={setStudentId}>
-                  <SelectTrigger><SelectValue placeholder="Select student" /></SelectTrigger>
-                  <SelectContent>{students.map(s => <SelectItem key={s.user_id} value={s.user_id}>{s.full_name}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Batch</Label>
-                <Select value={batchId} onValueChange={setBatchId}>
-                  <SelectTrigger><SelectValue placeholder="Select batch" /></SelectTrigger>
-                  <SelectContent>{batches.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <Button type="submit" className="w-full" disabled={!studentId || !batchId}>Assign</Button>
-            </form>
+            {renderForm(handleCreate, 'Assign')}
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) resetForm(); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Student Batch</DialogTitle></DialogHeader>
+          {renderForm(handleEdit, 'Update')}
+        </DialogContent>
+      </Dialog>
 
       <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -119,7 +153,7 @@ export default function ManageStudentBatches() {
             <TableRow>
               <TableHead>Student</TableHead>
               <TableHead>Batch</TableHead>
-              <TableHead className="w-20">Actions</TableHead>
+              <TableHead className="w-28">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -128,9 +162,14 @@ export default function ManageStudentBatches() {
                 <TableCell className="font-medium">{r.student_name}</TableCell>
                 <TableCell>{r.batch_name}</TableCell>
                 <TableCell>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(r.id)}>
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(r)}>
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(r.id)}>
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

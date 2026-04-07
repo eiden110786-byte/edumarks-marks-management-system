@@ -282,6 +282,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          approval_status: string
           avatar_url: string | null
           created_at: string
           email: string
@@ -293,6 +294,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          approval_status?: string
           avatar_url?: string | null
           created_at?: string
           email?: string
@@ -304,6 +306,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          approval_status?: string
           avatar_url?: string | null
           created_at?: string
           email?: string
@@ -428,6 +431,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_approval_status: { Args: { _user_id: string }; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]

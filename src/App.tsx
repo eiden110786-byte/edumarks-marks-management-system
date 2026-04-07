@@ -20,6 +20,7 @@ import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminFees from "./pages/admin/AdminFees";
 import AdminAttendance from "./pages/admin/AdminAttendance";
 import AdminAssignmentUploads from "./pages/admin/AdminAssignmentUploads";
+import PendingApprovals from "./pages/admin/PendingApprovals";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import TeacherMarks from "./pages/teacher/TeacherMarks";
 import TeacherPerformance from "./pages/teacher/TeacherPerformance";
@@ -59,6 +60,7 @@ const App = () => (
             <Route path="/admin/analytics" element={<ProtectedRoute allowedRoles={['admin']}><AdminAnalytics /></ProtectedRoute>} />
             <Route path="/admin/fees" element={<ProtectedRoute allowedRoles={['admin']}><AdminFees /></ProtectedRoute>} />
             <Route path="/admin/assignment-uploads" element={<ProtectedRoute allowedRoles={['admin']}><AdminAssignmentUploads /></ProtectedRoute>} />
+            <Route path="/admin/pending-approvals" element={<ProtectedRoute allowedRoles={['admin']}><PendingApprovals /></ProtectedRoute>} />
             <Route path="/admin/profile" element={<ProtectedRoute allowedRoles={['admin']}><Profile /></ProtectedRoute>} />
             
             {/* Teacher Routes */}

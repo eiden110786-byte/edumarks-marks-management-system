@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, Users, BookOpen, Layers, ClipboardList,
   BarChart3, LogOut, Menu, X, UserCog, FileText, UsersRound, KeyRound,
-  Upload, CalendarCheck, CreditCard, User
+  Upload, CalendarCheck, CreditCard, User, ShieldCheck
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -22,12 +22,13 @@ const adminNav: NavItem[] = [
   { label: 'Users', href: '/admin/users', icon: <Users className="w-5 h-5" /> },
   { label: 'Batches', href: '/admin/batches', icon: <Layers className="w-5 h-5" /> },
   { label: 'Subjects', href: '/admin/subjects', icon: <BookOpen className="w-5 h-5" /> },
-  { label: 'Assignments', href: '/admin/assignments', icon: <UserCog className="w-5 h-5" /> },
-  { label: 'Student Batches', href: '/admin/student-batches', icon: <UsersRound className="w-5 h-5" /> },
+  { label: 'Subject Assignment', href: '/admin/assignments', icon: <UserCog className="w-5 h-5" /> },
+  { label: 'Students Batches', href: '/admin/student-batches', icon: <UsersRound className="w-5 h-5" /> },
   { label: 'Marks', href: '/admin/marks', icon: <ClipboardList className="w-5 h-5" /> },
   { label: 'Attendance', href: '/admin/attendance', icon: <CalendarCheck className="w-5 h-5" /> },
   { label: 'Assignment Files', href: '/admin/assignment-uploads', icon: <Upload className="w-5 h-5" /> },
   { label: 'Fee Payments', href: '/admin/fees', icon: <CreditCard className="w-5 h-5" /> },
+  { label: 'Pending Approvals', href: '/admin/pending-approvals', icon: <ShieldCheck className="w-5 h-5" /> },
   { label: 'Analytics', href: '/admin/analytics', icon: <BarChart3 className="w-5 h-5" /> },
   { label: 'Profile', href: '/admin/profile', icon: <User className="w-5 h-5" /> },
 ];
@@ -35,7 +36,7 @@ const adminNav: NavItem[] = [
 const teacherNav: NavItem[] = [
   { label: 'Dashboard', href: '/teacher', icon: <LayoutDashboard className="w-5 h-5" /> },
   { label: 'Enter Marks', href: '/teacher/marks', icon: <ClipboardList className="w-5 h-5" /> },
-  { label: 'Assignments', href: '/teacher/assignments', icon: <Upload className="w-5 h-5" /> },
+  { label: 'Subject Assignment', href: '/teacher/assignments', icon: <Upload className="w-5 h-5" /> },
   { label: 'Attendance', href: '/teacher/attendance', icon: <CalendarCheck className="w-5 h-5" /> },
   { label: 'Performance', href: '/teacher/performance', icon: <BarChart3 className="w-5 h-5" /> },
   { label: 'Profile', href: '/teacher/profile', icon: <User className="w-5 h-5" /> },
@@ -45,7 +46,7 @@ const studentNav: NavItem[] = [
   { label: 'Dashboard', href: '/student', icon: <LayoutDashboard className="w-5 h-5" /> },
   { label: 'My Marks', href: '/student/marks', icon: <ClipboardList className="w-5 h-5" /> },
   { label: 'Marks Certificate', href: '/student/report', icon: <FileText className="w-5 h-5" /> },
-  { label: 'Assignments', href: '/student/assignments', icon: <Upload className="w-5 h-5" /> },
+  { label: 'Subject Assignment', href: '/student/assignments', icon: <Upload className="w-5 h-5" /> },
   { label: 'Attendance', href: '/student/attendance', icon: <CalendarCheck className="w-5 h-5" /> },
   { label: 'Fee Payments', href: '/student/fees', icon: <CreditCard className="w-5 h-5" /> },
   { label: 'Profile', href: '/student/profile', icon: <User className="w-5 h-5" /> },

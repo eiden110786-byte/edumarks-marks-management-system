@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, Search } from 'lucide-react';
+import { Plus, Trash2, Search, Pencil } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface TeacherSubject {
@@ -27,6 +27,8 @@ export default function ManageAssignments() {
   const [subjects, setSubjects] = useState<{ id: string; name: string }[]>([]);
   const [batches, setBatches] = useState<{ id: string; name: string }[]>([]);
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editId, setEditId] = useState('');
   const [teacherId, setTeacherId] = useState('');
   const [subjectId, setSubjectId] = useState('');
   const [batchId, setBatchId] = useState('');
@@ -66,12 +68,33 @@ export default function ManageAssignments() {
 
   useEffect(() => { fetchAll(); }, []);
 
+  const resetForm = () => { setTeacherId(''); setSubjectId(''); setBatchId(''); };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     const { error } = await supabase.from('teacher_subjects').insert({ teacher_id: teacherId, subject_id: subjectId, batch_id: batchId });
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return; }
-    toast({ title: 'Assignment created' });
+    toast({ title: 'Subject assignment created' });
     setOpen(false);
+    resetForm();
+    fetchAll();
+  };
+
+  const openEdit = (a: TeacherSubject) => {
+    setEditId(a.id);
+    setTeacherId(a.teacher_id);
+    setSubjectId(a.subject_id);
+    setBatchId(a.batch_id);
+    setEditOpen(true);
+  };
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { error } = await supabase.from('teacher_subjects').update({ teacher_id: teacherId, subject_id: subjectId, batch_id: batchId }).eq('id', editId);
+    if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return; }
+    toast({ title: 'Subject assignment updated' });
+    setEditOpen(false);
+    resetForm();
     fetchAll();
   };
 
@@ -87,44 +110,56 @@ export default function ManageAssignments() {
     a.batch_name.toLowerCase().includes(search.toLowerCase())
   );
 
+  const renderForm = (onSubmit: (e: React.FormEvent) => void, submitLabel: string) => (
+    <form onSubmit={onSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label>Teacher</Label>
+        <Select value={teacherId} onValueChange={setTeacherId}>
+          <SelectTrigger><SelectValue placeholder="Select teacher" /></SelectTrigger>
+          <SelectContent>{teachers.map(t => <SelectItem key={t.user_id} value={t.user_id}>{t.full_name}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2">
+        <Label>Subject</Label>
+        <Select value={subjectId} onValueChange={setSubjectId}>
+          <SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
+          <SelectContent>{subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2">
+        <Label>Batch</Label>
+        <Select value={batchId} onValueChange={setBatchId}>
+          <SelectTrigger><SelectValue placeholder="Select batch" /></SelectTrigger>
+          <SelectContent>{batches.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+      <Button type="submit" className="w-full" disabled={!teacherId || !subjectId || !batchId}>{submitLabel}</Button>
+    </form>
+  );
+
   return (
     <DashboardLayout>
       <div className="page-header flex items-start justify-between">
         <div>
-          <h1 className="page-title">Subject Assignments</h1>
+          <h1 className="page-title">Subject Assignment</h1>
           <p className="page-description">Assign subjects to teachers for specific batches</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
           <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" />Assign</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Assign Subject to Teacher</DialogTitle></DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Teacher</Label>
-                <Select value={teacherId} onValueChange={setTeacherId}>
-                  <SelectTrigger><SelectValue placeholder="Select teacher" /></SelectTrigger>
-                  <SelectContent>{teachers.map(t => <SelectItem key={t.user_id} value={t.user_id}>{t.full_name}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Subject</Label>
-                <Select value={subjectId} onValueChange={setSubjectId}>
-                  <SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
-                  <SelectContent>{subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Batch</Label>
-                <Select value={batchId} onValueChange={setBatchId}>
-                  <SelectTrigger><SelectValue placeholder="Select batch" /></SelectTrigger>
-                  <SelectContent>{batches.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <Button type="submit" className="w-full" disabled={!teacherId || !subjectId || !batchId}>Assign</Button>
-            </form>
+            {renderForm(handleCreate, 'Assign')}
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) resetForm(); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Subject Assignment</DialogTitle></DialogHeader>
+          {renderForm(handleEdit, 'Update')}
+        </DialogContent>
+      </Dialog>
 
       <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -138,7 +173,7 @@ export default function ManageAssignments() {
               <TableHead>Teacher</TableHead>
               <TableHead>Subject</TableHead>
               <TableHead>Batch</TableHead>
-              <TableHead className="w-20">Actions</TableHead>
+              <TableHead className="w-28">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -148,9 +183,14 @@ export default function ManageAssignments() {
                 <TableCell>{a.subject_name}</TableCell>
                 <TableCell>{a.batch_name}</TableCell>
                 <TableCell>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(a.id)}>
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(a)}>
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(a.id)}>
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
